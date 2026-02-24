@@ -1,0 +1,77 @@
+{% extends "core/base.html" %}
+{% load currency %}
+{% block title %}Cash Flow — BukuDapur MBG{% endblock %}
+
+{% block content %}
+
+<div class="cardx p-4 mb-3">
+  <div class="h4 mb-1">Cash Flow</div>
+  <div class="muted">Kontrak: {{ contract.name }}</div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="muted small">Total Penjualan</div>
+      <div class="h4 m-0">{{ sales_total|rupiah }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="muted small">Cash Masuk</div>
+      <div class="h4 m-0">{{ cash_in_total|rupiah }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="muted small">Penjualan Kredit</div>
+      <div class="h4 m-0">{{ credit_sales_total|rupiah }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="cardx p-3">
+      <div class="muted small">Piutang Berjalan</div>
+      <div class="h4 m-0">{{ ar_outstanding|rupiah }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="cardx p-4">
+  <div class="fw-semibold mb-2">7 Hari Terakhir</div>
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead>
+        <tr class="muted small">
+          <th>Tanggal</th>
+          <th>Tipe</th>
+          <th class="text-end">Penjualan</th>
+          <th class="text-end">Cash Masuk</th>
+          <th>Jatuh Tempo</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in rows %}
+          <tr>
+            <td>{{ r.date|date:"d M Y" }}</td>
+            <td>
+              {% if r.payment_type == "CASH" %}
+                <span class="badge bg-success">Tunai</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">Kredit</span>
+              {% endif %}
+            </td>
+            <td class="text-end">{{ r.sales|rupiah }}</td>
+            <td class="text-end">{{ r.cash_in|rupiah }}</td>
+            <td class="muted">
+              {% if r.due %}{{ r.due|date:"d M Y" }}{% else %}-{% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5" class="muted">Belum ada data.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

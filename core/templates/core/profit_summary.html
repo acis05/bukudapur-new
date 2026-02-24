@@ -1,0 +1,38 @@
+{% extends "core/base.html" %}
+{% load currency %}
+{% block title %}Profit Summary{% endblock %}
+
+{% block content %}
+
+<div class="cardx p-4 mb-4">
+  <div class="h4 mb-1">Profit Summary</div>
+  <div class="muted">Kontrak: {{ contract.name }}</div>
+</div>
+
+<div class="row g-3">
+
+  <div class="col-md-4">
+    <div class="cardx p-4">
+      <div class="muted small">Total Omzet</div>
+      <div class="h3">{{ revenue|rupiah }}</div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="cardx p-4">
+      <div class="muted small">Total Biaya</div>
+      <div class="h3">{{ total_cost|rupiah }}</div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="cardx p-4">
+      <div class="muted small">Laba Kotor</div>
+      <div class="h3">{{ profit|rupiah }}</div>
+      <div class="small muted">Margin: {{ margin_pct|floatformat:1 }}%</div>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}

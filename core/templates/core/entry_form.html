@@ -1,0 +1,152 @@
+{% extends "core/base.html" %}
+{% block title %}{% if is_edit %}Edit Input Harian{% else %}Input Harian{% endif %} — BukuDapur MBG{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    <div class="cardx p-4">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="h4 mb-1">{% if is_edit %}Edit Input Harian{% else %}Input Harian{% endif %}</div>
+          <div class="muted">Kontrak: <b>{{ contract.name }}</b></div>
+        </div>
+        <a class="btn btn-ghost" href="{% url 'history' %}">Kembali</a>
+      </div>
+
+      {% if form.errors %}
+        <div class="alert alert-warning mt-3">
+          <div class="fw-semibold mb-1">Form belum valid:</div>
+          {{ form.errors }}
+        </div>
+      {% endif %}
+
+      <form method="post" class="mt-3" id="entryForm">
+        {% csrf_token %}
+
+        <div class="row g-3">
+
+          <div class="col-md-6">
+            <label class="form-label">Tanggal</label>
+            {{ form.date }}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Jumlah Porsi</label>
+            {{ form.portions }}
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Biaya Bahan</label>
+            {{ form.cost_material }}
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Biaya Tenaga Kerja</label>
+            {{ form.cost_labor }}
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label">Biaya Overhead</label>
+            {{ form.cost_overhead }}
+          </div>
+
+          {# ==== CASH FLOW FIELDS ==== #}
+          {% if form.payment_type %}
+          <div class="col-md-4">
+            <label class="form-label">Tipe Pembayaran</label>
+            {{ form.payment_type }}
+          </div>
+          {% endif %}
+
+          {% if form.paid_amount %}
+          <div class="col-md-4">
+            <label class="form-label">Cash Masuk Hari Ini</label>
+            {{ form.paid_amount }}
+            <div class="small muted mt-1">Kosongkan jika Tunai (auto diisi), isi DP jika Kredit.</div>
+          </div>
+          {% endif %}
+
+          {% if form.credit_due_date %}
+          <div class="col-md-4">
+            <label class="form-label">Jatuh Tempo (Kredit)</label>
+            {{ form.credit_due_date }}
+          </div>
+          {% endif %}
+
+          {% if form.notes %}
+          <div class="col-md-12">
+            <label class="form-label">Catatan (opsional)</label>
+            {{ form.notes }}
+          </div>
+          {% endif %}
+
+        </div>
+
+        <div class="cardx p-3 mt-3" style="border-radius:16px;">
+          <div class="small muted">Preview otomatis</div>
+
+          <div class="d-flex justify-content-between mt-1">
+            <div>Total Biaya</div>
+            <div class="fw-semibold" id="pvTotal">Rp 0</div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <div>Biaya per Porsi</div>
+            <div class="fw-semibold" id="pvCpp">Rp 0</div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <div>Margin per Porsi</div>
+            <div class="fw-semibold" id="pvMpp">Rp 0</div>
+          </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <button class="btn btn-accent" type="submit">
+            {% if is_edit %}Simpan Perubahan{% else %}Simpan{% endif %}
+          </button>
+          <a class="btn btn-ghost" href="{% url 'history' %}">Batal</a>
+        </div>
+      </form>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function(){
+    const price = Number("{{ contract.price_per_portion }}") || 0;
+
+    const elP = document.getElementById("id_portions");
+    const elM = document.getElementById("id_cost_material");
+    const elL = document.getElementById("id_cost_labor");
+    const elO = document.getElementById("id_cost_overhead");
+
+    const pvTotal = document.getElementById("pvTotal");
+    const pvCpp = document.getElementById("pvCpp");
+    const pvMpp = document.getElementById("pvMpp");
+
+    function n(v){ return Number(String(v||"0").replace(",", ".")) || 0; }
+    function fmt(x){
+      try { return new Intl.NumberFormat("id-ID").format(Math.round(x)); }
+      catch(e){ return String(x); }
+    }
+
+    function recalc(){
+      const portions = elP ? n(elP.value) : 0;
+      const total = (elM ? n(elM.value) : 0) + (elL ? n(elL.value) : 0) + (elO ? n(elO.value) : 0);
+      const cpp = portions > 0 ? (total / portions) : 0;
+      const mpp = price - cpp;
+
+      if (pvTotal) pvTotal.textContent = "Rp " + fmt(total);
+      if (pvCpp) pvCpp.textContent = "Rp " + fmt(cpp);
+      if (pvMpp) pvMpp.textContent = "Rp " + fmt(mpp);
+    }
+
+    [elP, elM, elL, elO].forEach(el => el && el.addEventListener("input", recalc));
+    recalc();
+  })();
+</script>
+{% endblock %}

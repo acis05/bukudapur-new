@@ -1,0 +1,61 @@
+{% extends "core/base.html" %}
+{% block title %}Kontrak — BukuDapur MBG{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="cardx p-4">
+      <div class="h4 mb-1">Kontrak Aktif</div>
+      <div class="muted mb-3">Isi data kontrak. Sistem hanya menyimpan <b>1 kontrak aktif</b>.</div>
+
+      <form method="post">
+        {% csrf_token %}
+
+        <div class="row g-3">
+          <div class="col-md-12">
+            <label class="form-label">Nama Proyek</label>
+            {{ form.name }}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Tanggal Mulai</label>
+            {{ form.start_date }}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Durasi (hari)</label>
+            {{ form.duration_days }}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Harga per Porsi</label>
+            {{ form.price_per_portion }}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Target Porsi / Hari</label>
+            {{ form.target_portions_per_day }}
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Target Margin (%)</label>
+            {{ form.target_margin_pct }}
+          </div>
+
+          <div class="col-md-6 d-flex align-items-end">
+            <div class="form-check">
+              {{ form.is_active }}
+              <label class="form-check-label">Aktif</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+          <button class="btn btn-accent" type="submit">Simpan Kontrak</button>
+          <a class="btn btn-outline-light" href="{% url 'dashboard' %}">Kembali</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

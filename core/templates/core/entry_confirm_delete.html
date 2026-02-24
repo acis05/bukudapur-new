@@ -1,0 +1,23 @@
+{% extends "core/base.html" %}
+{% load currency %}
+{% block title %}Hapus Transaksi — BukuDapur MBG{% endblock %}
+
+{% block content %}
+<div class="cardx p-4">
+  <div class="h5 mb-2">Hapus Transaksi?</div>
+  <div class="muted mb-3">
+    Tanggal: <b>{{ entry.date|date:"d M Y" }}</b><br/>
+    Porsi: <b>{{ entry.portions }}</b><br/>
+    Tipe: <b>{% if entry.payment_type == "CASH" %}Tunai{% else %}Kredit{% endif %}</b><br/>
+    Cash masuk: <b>{{ entry.paid_amount|rupiah }}</b>
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="d-flex gap-2">
+      <a class="btn btn-ghost" href="{% url 'history' %}">Batal</a>
+      <button class="btn btn-danger" type="submit">Ya, Hapus</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

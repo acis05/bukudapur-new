@@ -1,0 +1,235 @@
+{% extends "core/base.html" %}
+{% load currency %}
+{% block title %}Dashboard — BukuDapur MBG{% endblock %}
+
+{% block content %}
+
+  <!-- HEADER -->
+  <div class="cardx p-4 mb-3">
+    <div class="d-flex justify-content-between align-items-start">
+      <div>
+        <div class="h4 mb-1">Dashboard</div>
+        <div class="muted">
+          Kontrak aktif: <b>{{ contract.name }}</b>
+          · Harga/porsi: <b>{{ price|rupiah }}</b>
+          · Target margin: <b>{{ contract.target_margin_pct }}%</b>
+        </div>
+      </div>
+      <a class="btn btn-accent" href="{% url 'entry_create' %}">
+        + Input Hari Ini
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI -->
+  <div class="row g-3 mb-3">
+
+    <div class="col-md-6 col-xl-3">
+      <div class="cardx p-3">
+        <div class="muted small">Margin per Porsi</div>
+        <div class="h3 m-0" id="kpiMpp">{{ kpi_mpp|rupiah }}</div>
+        <div class="small muted">Target: {{ target_margin_per_portion|rupiah }}</div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+      <div class="cardx p-3">
+        <div class="muted small">Biaya per Porsi</div>
+        <div class="h3 m-0" id="kpiCpp">{{ kpi_cpp|rupiah }}</div>
+        <div class="small muted">Batas: {{ target_cost_per_portion|rupiah }}</div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+      <div class="cardx p-3">
+        <div class="muted small">Margin Berjalan</div>
+        <div class="h3 m-0" id="kpiProfit">{{ kpi_profit|rupiah }}</div>
+        <div class="small muted">
+          Porsi: {{ total_portions }} / {{ target_total_portions }}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 col-xl-3">
+      <div class="cardx p-3">
+        <div class="muted small">Proyeksi Laba Akhir</div>
+        <div class="h3 m-0" id="kpiProj">{{ kpi_projected_profit|rupiah }}</div>
+        <div class="small muted">
+          Deviasi vs target: {{ dev_vs_target_pct|floatformat:1 }}%
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- CHARTS -->
+  <div class="row g-3 mb-3">
+
+    <div class="col-lg-8">
+      <div class="cardx p-4">
+        <div class="fw-semibold mb-2">Tren Margin per Porsi</div>
+        <canvas id="marginChart" height="110"></canvas>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="cardx p-4">
+        <div class="fw-semibold mb-2">Breakdown Biaya</div>
+        <canvas id="costChart" height="220"></canvas>
+
+        <div class="mt-3 small">
+          <div class="d-flex justify-content-between">
+            <span class="muted">Bahan</span>
+            <span>{{ sum_mat|rupiah }}</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="muted">Tenaga</span>
+            <span>{{ sum_lab|rupiah }}</span>
+          </div>
+          <div class="d-flex justify-content-between">
+            <span class="muted">Overhead</span>
+            <span>{{ sum_ovh|rupiah }}</span>
+          </div>
+          <hr style="border-color: var(--border);">
+          <div class="d-flex justify-content-between fw-semibold">
+            <span>Total</span>
+            <span>{{ total_cost|rupiah }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PROGRESS -->
+  <div class="cardx p-4">
+    <div class="d-flex justify-content-between">
+      <div>
+        <div class="fw-semibold">Progress Kontrak</div>
+        <div class="muted small">Realisasi porsi terhadap target</div>
+      </div>
+      <div class="muted small">{{ progress_portions|floatformat:1 }}%</div>
+    </div>
+
+    <div class="progress mt-3" style="height:12px; background:rgba(255,255,255,.08); border-radius:999px;">
+      <div class="progress-bar"
+           style="width: {{ progress_portions|floatformat:0 }}%;
+                  background: var(--accent);
+                  border-radius:999px;">
+      </div>
+    </div>
+
+    <div class="row mt-3 small">
+      <div class="col-md-4">
+        <span class="muted">Omzet:</span> {{ revenue|rupiah }}
+      </div>
+      <div class="col-md-4">
+        <span class="muted">Biaya:</span> {{ total_cost|rupiah }}
+      </div>
+      <div class="col-md-4">
+        <span class="muted">Target Laba:</span> {{ target_profit_total|rupiah }}
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART.JS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <script>
+  (function(){
+
+    if (!window.Chart) return;
+
+    const labels = JSON.parse('{{ chart_labels_json|escapejs }}');
+    const margin = JSON.parse('{{ chart_margin_json|escapejs }}');
+    const target = JSON.parse('{{ chart_target_json|escapejs }}');
+    const donutData = JSON.parse('{{ donut_cost_json|escapejs }}');
+
+    const isDark = document.documentElement.dataset.theme === "dark";
+    const tickColor = isDark ? "#E2E8F0" : "#0F172A";
+    const gridColor = isDark ? "rgba(255,255,255,.08)" : "rgba(15,23,42,.08)";
+
+    // LINE
+    const ctx1 = document.getElementById("marginChart");
+    if (ctx1){
+      new Chart(ctx1, {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: "Margin/porsi",
+              data: margin,
+              borderColor: "#3B82F6",
+              tension: 0.35,
+              borderWidth: 2
+            },
+            {
+              label: "Target",
+              data: target,
+              borderColor: "#F97316",
+              borderDash: [6,6],
+              borderWidth: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              ticks: { 
+                color: tickColor,
+                font: {
+                  weight: "700",   // tebalkan
+                  size: 13         // sedikit lebih besar
+                }
+              },
+              grid: { color: gridColor }
+            },
+            y: {
+              ticks: {
+                color: tickColor,
+                font: {
+                  weight: "700",   // tebalkan
+                  size: 13
+                },
+                callback: v => "Rp " + Math.round(v).toLocaleString("id-ID")
+              },
+              grid: { color: gridColor }
+            }
+          }
+        }
+      });
+    }
+
+    // DONUT
+    const ctx2 = document.getElementById("costChart");
+    if (ctx2){
+      new Chart(ctx2, {
+        type: "doughnut",
+        data: {
+          labels: ["Bahan", "Tenaga Kerja", "Overhead"],
+          datasets: [{
+            data: donutData,
+            backgroundColor: ["#F97316", "#3B82F6", "#A855F7"],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          cutout: "68%",
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { color: tickColor }
+            }
+          }
+        }
+      });
+    }
+
+  })();
+  </script>
+
+{% endblock %}
