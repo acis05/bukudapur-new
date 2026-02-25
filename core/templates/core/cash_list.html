@@ -19,7 +19,6 @@
     </div>
   </div>
 
-  <!-- Summary -->
   <div class="row g-3 mt-2">
     <div class="col-md-4">
       <div class="cardx p-3" style="border-radius:16px;">
@@ -43,7 +42,6 @@
     </div>
   </div>
 
-  <!-- Table -->
   <div class="table-responsive mt-3">
     <table class="table table-sm align-middle">
       <thead>
@@ -63,7 +61,7 @@
             <td>{{ t.date|date:"d M Y" }}</td>
             <td>
               <span class="fw-semibold">{{ t.category }}</span>
-              {% if t.type == "IN" %}
+              {% if t.flow == "IN" %}
                 <span class="badge text-bg-success ms-1">Masuk</span>
               {% else %}
                 <span class="badge text-bg-danger ms-1">Keluar</span>
@@ -72,7 +70,7 @@
             <td class="muted">{{ t.notes|default:"—" }}</td>
 
             <td class="text-end">
-              {% if t.type == "IN" %}
+              {% if t.flow == "IN" %}
                 <span class="fw-semibold text-success">{{ t.amount|rupiah }}</span>
               {% else %}
                 <span class="muted">—</span>
@@ -80,7 +78,7 @@
             </td>
 
             <td class="text-end">
-              {% if t.type == "OUT" %}
+              {% if t.flow == "OUT" %}
                 <span class="fw-semibold text-danger">{{ t.amount|rupiah }}</span>
               {% else %}
                 <span class="muted">—</span>
