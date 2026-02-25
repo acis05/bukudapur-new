@@ -85,6 +85,19 @@
     border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
     color: var(--text);
   }
+  /* Mobile: topbar wrap + nav bisa scroll */
+  @media (max-width: 576px){
+    .topbar .container{
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .topbar .container > div:last-child{
+      width: 100%;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding-bottom: 4px;
+    }
+  }
   </style>
 </head>
 

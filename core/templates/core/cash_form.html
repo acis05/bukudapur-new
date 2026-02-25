@@ -1,15 +1,16 @@
 {% extends "core/base.html" %}
+{% load currency %}
 {% block title %}{% if is_edit %}Edit Cash{% else %}Tambah Cash{% endif %} — BukuDapur MBG{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-lg-7">
     <div class="cardx p-4">
-      <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div>
           <div class="h4 mb-1">{% if is_edit %}Edit Cash{% else %}Tambah Cash{% endif %}</div>
-          {% if contract %}<div class="muted">Kontrak: <b>{{ contract.name }}</b></div>{% endif %}
-          <div class="muted small">Gunakan untuk pemasukan/pengeluaran kas selain penjualan harian (opsional).</div>
+          <div class="muted">Kontrak: <b>{{ contract.name }}</b></div>
+          <div class="muted small">Gunakan untuk pemasukan/pengeluaran kas selain penjualan harian bila perlu.</div>
         </div>
         <a class="btn btn-ghost" href="{% url 'cash_list' %}">Kembali</a>
       </div>
@@ -32,8 +33,8 @@
 
           <div class="col-md-6">
             <label class="form-label">Tipe</label>
+            <div class="muted small mb-1">Masuk = uang masuk, Keluar = uang keluar.</div>
             {{ form.flow }}
-            <div class="small muted mt-1">Masuk = uang masuk, Keluar = uang keluar.</div>
           </div>
 
           <div class="col-md-6">
@@ -43,27 +44,19 @@
 
           <div class="col-md-6">
             <label class="form-label">Nominal</label>
+            <div class="muted small mb-1">Isi angka saja (contoh: 150000).</div>
             {{ form.amount }}
-            <div class="small muted mt-1">Isi angka saja (contoh: 150000).</div>
           </div>
 
-          <div class="col-md-12">
+          <div class="col-12">
             <label class="form-label">Catatan (opsional)</label>
             {{ form.notes }}
           </div>
         </div>
 
-        <div class="cardx p-3 mt-3" style="border-radius:16px;">
-          <div class="small muted">Preview</div>
-          <div class="d-flex justify-content-between mt-1">
-            <div>Total</div>
-            <div class="fw-semibold" id="pvCash">Rp 0</div>
-          </div>
-        </div>
-
         <div class="mt-4 d-flex gap-2">
           <button class="btn btn-accent" type="submit">Simpan</button>
-          <a class="btn btn-ghost" href="{% url 'cash_list' %}">Batal</a>
+          <a class="btn btn-outline-light" href="{% url 'cash_list' %}">Lihat Cash Flow</a>
         </div>
       </form>
     </div>
@@ -71,22 +64,17 @@
 </div>
 
 <script>
+  // Pastikan select "flow" benar-benar bisa dipilih (kadang widget ke-render tanpa class)
   (function(){
-    const elAmount = document.getElementById("id_amount");
-    const pvCash = document.getElementById("pvCash");
-
-    function n(v){ return Number(String(v||"0").replace(",", ".")) || 0; }
-    function fmt(x){
-      try { return new Intl.NumberFormat("id-ID").format(Math.round(x)); }
-      catch(e){ return String(x); }
-    }
-    function recalc(){
-      const amount = n(elAmount ? elAmount.value : 0);
-      pvCash.textContent = "Rp " + fmt(amount);
-    }
-
-    if (elAmount) elAmount.addEventListener("input", recalc);
-    recalc();
+    const elFlow = document.getElementById("id_flow");
+    if (elFlow) elFlow.classList.add("form-select");
+    const ids = ["id_date","id_category","id_amount","id_notes"];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === "SELECT") el.classList.add("form-select");
+      else el.classList.add("form-control");
+    });
   })();
 </script>
 {% endblock %}

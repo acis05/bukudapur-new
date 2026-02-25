@@ -4,13 +4,11 @@
 
 {% block content %}
 <div class="cardx p-4">
-  <div class="d-flex justify-content-between align-items-center">
+  <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
     <div>
-      <div class="h4 mb-1">Cash Flow</div>
-      {% if contract %}
-        <div class="muted">Kontrak: <b>{{ contract.name }}</b></div>
-      {% endif %}
-      <div class="muted small">Catat pemasukan & pengeluaran kas (di luar penjualan harian bila perlu).</div>
+      <div class="h3 mb-1">Cash Flow</div>
+      <div class="muted">Kontrak: <b>{{ contract.name }}</b></div>
+      <div class="muted">Catat pemasukan & pengeluaran kas (di luar penjualan harian bila perlu).</div>
     </div>
 
     <div class="d-flex gap-2">
@@ -19,25 +17,23 @@
     </div>
   </div>
 
-  <div class="row g-3 mt-2">
+  <div class="row g-3 mt-3">
     <div class="col-md-4">
-      <div class="cardx p-3" style="border-radius:16px;">
+      <div class="cardx p-3">
         <div class="muted small">Total Masuk</div>
-        <div class="h4 m-0 text-success">{{ sum_in|rupiah }}</div>
+        <div class="h4 m-0">{{ total_in|rupiah }}</div>
       </div>
     </div>
     <div class="col-md-4">
-      <div class="cardx p-3" style="border-radius:16px;">
+      <div class="cardx p-3">
         <div class="muted small">Total Keluar</div>
-        <div class="h4 m-0 text-danger">{{ sum_out|rupiah }}</div>
+        <div class="h4 m-0">{{ total_out|rupiah }}</div>
       </div>
     </div>
     <div class="col-md-4">
-      <div class="cardx p-3" style="border-radius:16px;">
+      <div class="cardx p-3">
         <div class="muted small">Net Cash</div>
-        <div class="h4 m-0 {% if net_cash < 0 %}text-danger{% else %}text-success{% endif %}">
-          {{ net_cash|rupiah }}
-        </div>
+        <div class="h4 m-0">{{ net_cash|rupiah }}</div>
       </div>
     </div>
   </div>
@@ -46,56 +42,32 @@
     <table class="table table-sm align-middle">
       <thead>
         <tr>
-          <th style="width:120px;">Tanggal</th>
-          <th>Kategori</th>
+          <th style="min-width:110px;">Tanggal</th>
+          <th style="min-width:120px;">Kategori</th>
           <th>Catatan</th>
-          <th class="text-end" style="width:160px;">Masuk</th>
-          <th class="text-end" style="width:160px;">Keluar</th>
-          <th class="text-end" style="width:160px;">Aksi</th>
+          <th class="text-end" style="min-width:120px;">Masuk</th>
+          <th class="text-end" style="min-width:120px;">Keluar</th>
+          <th class="text-end" style="min-width:120px;">Aksi</th>
         </tr>
       </thead>
-
       <tbody>
-        {% for t in transactions %}
+        {% for e in entries %}
           <tr>
-            <td>{{ t.date|date:"d M Y" }}</td>
-            <td>
-              <span class="fw-semibold">{{ t.category }}</span>
-              {% if t.flow == "IN" %}
-                <span class="badge text-bg-success ms-1">Masuk</span>
-              {% else %}
-                <span class="badge text-bg-danger ms-1">Keluar</span>
-              {% endif %}
-            </td>
-            <td class="muted">{{ t.notes|default:"—" }}</td>
+            <td>{{ e.date|date:"d M Y" }}</td>
+            <td>{{ e.category }}</td>
+            <td class="muted">{{ e.notes|default:"-" }}</td>
 
             <td class="text-end">
-              {% if t.flow == "IN" %}
-                <span class="fw-semibold text-success">{{ t.amount|rupiah }}</span>
-              {% else %}
-                <span class="muted">—</span>
-              {% endif %}
+              {% if e.flow == "IN" %}<b>{{ e.amount|rupiah }}</b>{% else %}-{% endif %}
+            </td>
+            <td class="text-end">
+              {% if e.flow == "OUT" %}<b>{{ e.amount|rupiah }}</b>{% else %}-{% endif %}
             </td>
 
             <td class="text-end">
-              {% if t.flow == "OUT" %}
-                <span class="fw-semibold text-danger">{{ t.amount|rupiah }}</span>
-              {% else %}
-                <span class="muted">—</span>
-              {% endif %}
-            </td>
-
-            <td class="text-end">
-              <div class="d-inline-flex gap-2">
-                <a class="btn btn-sm btn-nav" href="{% url 'cash_edit' t.id %}">Edit</a>
-                <form method="post" action="{% url 'cash_delete' t.id %}" style="display:inline;">
-                  {% csrf_token %}
-                  <button class="btn btn-sm btn-ghost" type="submit"
-                          onclick="return confirm('Hapus transaksi ini?');">
-                    Hapus
-                  </button>
-                </form>
-              </div>
+              <a class="btn btn-sm btn-nav" href="{% url 'cash_edit' e.id %}">Edit</a>
+              <a class="btn btn-sm btn-ghost" href="{% url 'cash_delete' e.id %}"
+                 onclick="return confirm('Hapus transaksi cash ini?');">Hapus</a>
             </td>
           </tr>
         {% empty %}
@@ -106,6 +78,10 @@
       </tbody>
     </table>
   </div>
-
 </div>
+
+<style>
+  /* Biar tabel nyaman di HP: kalau sempit bisa scroll horizontal tapi tidak “maksa ke kanan” */
+  .table-responsive{ -webkit-overflow-scrolling: touch; }
+</style>
 {% endblock %}
