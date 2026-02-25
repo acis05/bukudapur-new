@@ -27,4 +27,17 @@ class DailyEntryForm(forms.ModelForm):
             "cost_overhead": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
             "notes": forms.Textarea(attrs={"class": "form-control", "rows": 3}),
         }
-    
+
+from .models import CashTransaction
+
+class CashTransactionForm(forms.ModelForm):
+    class Meta:
+        model = CashTransaction
+        fields = ["date", "flow", "category", "amount", "notes"]
+        widgets = {
+            "date": forms.DateInput(attrs={"type": "date", "class": "form-control"}),
+            "flow": forms.Select(attrs={"class": "form-select"}),
+            "category": forms.TextInput(attrs={"class": "form-control", "placeholder": "contoh: Belanja Harian"}),
+            "amount": forms.NumberInput(attrs={"class": "form-control", "step": "0.01"}),
+            "notes": forms.Textarea(attrs={"class": "form-control", "rows": 2}),
+        }    

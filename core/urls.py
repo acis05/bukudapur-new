@@ -13,4 +13,8 @@ urlpatterns = [
     path("cashflow/", views.cashflow, name="cashflow"),
     path("entry/<int:pk>/edit/", views.entry_edit, name="entry_edit"),
     path("entry/<int:pk>/delete/", views.entry_delete, name="entry_delete"),
+    path("cash/", views.cash_list, name="cash_list"),
+    path("cash/new/", views.cash_create, name="cash_create"),
+    path("cash/<int:pk>/edit/", views.cash_edit, name="cash_edit"),
+    path("cash/<int:pk>/delete/", views.cash_delete, name="cash_delete"),
 ]

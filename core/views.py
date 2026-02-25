@@ -344,3 +344,57 @@ def entry_delete(request, pk):
         return redirect("history")
 
     return render(request, "core/entry_confirm_delete.html", {"entry": obj, "contract": c})
+
+from .models import CashTransaction
+from .forms import CashTransactionForm
+
+@require_auth
+def cash_list(request):
+    c = get_active_contract()
+    qs = CashTransaction.objects.all()
+    if c:
+        qs = qs.filter(contract=c)
+
+    total_in = qs.filter(flow="IN").aggregate(s=Sum("amount"))["s"] or 0
+    total_out = qs.filter(flow="OUT").aggregate(s=Sum("amount"))["s"] or 0
+    net = total_in - total_out
+
+    return render(request, "core/cash_list.html", {
+        "contract": c,
+        "rows": qs.order_by("-date", "-id"),
+        "total_in": total_in,
+        "total_out": total_out,
+        "net": net,
+    })
+
+@require_auth
+@require_http_methods(["GET", "POST"])
+def cash_create(request):
+    c = get_active_contract()
+    form = CashTransactionForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        obj.contract = c
+        obj.save()
+        return redirect("cash_list")
+    return render(request, "core/cash_form.html", {"form": form, "is_edit": False, "contract": c})
+
+@require_auth
+@require_http_methods(["GET", "POST"])
+def cash_edit(request, pk):
+    c = get_active_contract()
+    obj = get_object_or_404(CashTransaction, pk=pk)
+    form = CashTransactionForm(request.POST or None, instance=obj)
+    if request.method == "POST" and form.is_valid():
+        updated = form.save(commit=False)
+        updated.contract = c  # tetap tempel kontrak aktif
+        updated.save()
+        return redirect("cash_list")
+    return render(request, "core/cash_form.html", {"form": form, "is_edit": True, "contract": c})
+
+@require_auth
+@require_http_methods(["POST"])
+def cash_delete(request, pk):
+    obj = get_object_or_404(CashTransaction, pk=pk)
+    obj.delete()
+    return redirect("cash_list")

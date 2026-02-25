@@ -107,6 +107,9 @@
 
           <a class="btn btn-sm btn-nav {% if request.resolver_match.url_name == 'cashflow' %}active{% endif %}"
             href="{% url 'cashflow' %}">Cash Flow</a>
+          
+          <a class="btn btn-sm btn-nav {% if request.resolver_match.url_name|slice:":4" == 'cash' %}active{% endif %}"
+            href="{% url 'cash_list' %}">Input Transaksi Kas</a>  
 
           <a class="btn btn-sm btn-nav {% if request.resolver_match.url_name == 'entry_create' %}active{% endif %}"
             href="{% url 'entry_create' %}">Input Harian</a>

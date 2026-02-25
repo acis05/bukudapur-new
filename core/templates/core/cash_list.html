@@ -1,0 +1,113 @@
+{% extends "core/base.html" %}
+{% load currency %}
+{% block title %}Cash Flow — BukuDapur MBG{% endblock %}
+
+{% block content %}
+<div class="cardx p-4">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <div class="h4 mb-1">Cash Flow</div>
+      {% if contract %}
+        <div class="muted">Kontrak: <b>{{ contract.name }}</b></div>
+      {% endif %}
+      <div class="muted small">Catat pemasukan & pengeluaran kas (di luar penjualan harian bila perlu).</div>
+    </div>
+
+    <div class="d-flex gap-2">
+      <a class="btn btn-ghost" href="{% url 'dashboard' %}">Kembali</a>
+      <a class="btn btn-accent" href="{% url 'cash_create' %}">+ Tambah Cash</a>
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="row g-3 mt-2">
+    <div class="col-md-4">
+      <div class="cardx p-3" style="border-radius:16px;">
+        <div class="muted small">Total Masuk</div>
+        <div class="h4 m-0 text-success">{{ sum_in|rupiah }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="cardx p-3" style="border-radius:16px;">
+        <div class="muted small">Total Keluar</div>
+        <div class="h4 m-0 text-danger">{{ sum_out|rupiah }}</div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="cardx p-3" style="border-radius:16px;">
+        <div class="muted small">Net Cash</div>
+        <div class="h4 m-0 {% if net_cash < 0 %}text-danger{% else %}text-success{% endif %}">
+          {{ net_cash|rupiah }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-responsive mt-3">
+    <table class="table table-sm align-middle">
+      <thead>
+        <tr>
+          <th style="width:120px;">Tanggal</th>
+          <th>Kategori</th>
+          <th>Catatan</th>
+          <th class="text-end" style="width:160px;">Masuk</th>
+          <th class="text-end" style="width:160px;">Keluar</th>
+          <th class="text-end" style="width:160px;">Aksi</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {% for t in transactions %}
+          <tr>
+            <td>{{ t.date|date:"d M Y" }}</td>
+            <td>
+              <span class="fw-semibold">{{ t.category }}</span>
+              {% if t.type == "IN" %}
+                <span class="badge text-bg-success ms-1">Masuk</span>
+              {% else %}
+                <span class="badge text-bg-danger ms-1">Keluar</span>
+              {% endif %}
+            </td>
+            <td class="muted">{{ t.notes|default:"—" }}</td>
+
+            <td class="text-end">
+              {% if t.type == "IN" %}
+                <span class="fw-semibold text-success">{{ t.amount|rupiah }}</span>
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+
+            <td class="text-end">
+              {% if t.type == "OUT" %}
+                <span class="fw-semibold text-danger">{{ t.amount|rupiah }}</span>
+              {% else %}
+                <span class="muted">—</span>
+              {% endif %}
+            </td>
+
+            <td class="text-end">
+              <div class="d-inline-flex gap-2">
+                <a class="btn btn-sm btn-nav" href="{% url 'cash_edit' t.id %}">Edit</a>
+                <form method="post" action="{% url 'cash_delete' t.id %}" style="display:inline;">
+                  {% csrf_token %}
+                  <button class="btn btn-sm btn-ghost" type="submit"
+                          onclick="return confirm('Hapus transaksi ini?');">
+                    Hapus
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" class="muted">Belum ada transaksi cash.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

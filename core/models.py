@@ -62,3 +62,30 @@ class DailyEntry(models.Model):
     def revenue(self):
         # diisi di view (pakai price_per_portion dari contract)
         return None
+
+from django.db import models
+
+class CashTransaction(models.Model):
+    IN = "IN"
+    OUT = "OUT"
+    FLOW_CHOICES = [
+        (IN, "Masuk"),
+        (OUT, "Keluar"),
+    ]
+
+    date = models.DateField()
+    flow = models.CharField(max_length=3, choices=FLOW_CHOICES)
+    category = models.CharField(max_length=50)
+    amount = models.DecimalField(max_digits=14, decimal_places=2)
+    notes = models.TextField(blank=True)
+
+    # optional: kaitkan ke kontrak aktif (biar bisa filter per kontrak)
+    contract = models.ForeignKey("Contract", on_delete=models.CASCADE, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-date", "-id"]
+
+    def __str__(self):
+        return f"{self.date} {self.flow} {self.category} {self.amount}"
