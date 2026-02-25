@@ -358,30 +358,74 @@ def cashflow(request):
 # =========================
 # CASH TRANSACTION CRUD (manual cash in/out)
 # =========================
+from django.db.models import Sum
+from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.http import require_http_methods
+from django.utils.timezone import now
+from datetime import timedelta
+
+from .auth import require_auth
+from .models import CashTransaction, DailyEntry
+from .forms import CashTransactionForm
+
 @require_auth
 def cash_list(request):
     c = get_active_contract()
     if not c:
         return redirect("contract_setup")
 
-    qs = CashTransaction.objects.filter(contract=c).order_by("-date", "-id")
+    # ---- 1) Manual cash transactions (kas real di luar penjualan harian) ----
+    tx_qs = CashTransaction.objects.filter(contract=c)
 
-    total_in = qs.filter(flow="IN").aggregate(s=Sum("amount"))["s"] or 0
-    total_out = qs.filter(flow="OUT").aggregate(s=Sum("amount"))["s"] or 0
-    net_cash = total_in - total_out
+    manual_in = tx_qs.filter(flow="IN").aggregate(s=Sum("amount"))["s"] or 0
+    manual_out = tx_qs.filter(flow="OUT").aggregate(s=Sum("amount"))["s"] or 0
 
-    return render(
-        request,
-        "core/cash_list.html",
-        {
-            "contract": c,
-            "entries": qs,
-            "total_in": total_in,
-            "total_out": total_out,
-            "net_cash": net_cash,
-        },
-    )
+    # ---- 2) Cash masuk dari penjualan harian (yang benar2 dibayar) ----
+    entry_qs = DailyEntry.objects.filter(contract=c)
 
+    sales_cash_in = entry_qs.aggregate(s=Sum("paid_amount"))["s"] or 0
+
+    # ---- 3) Total kas ----
+    total_in = float(sales_cash_in) + float(manual_in)
+    total_out = float(manual_out)
+    net = total_in - total_out
+
+    # ---- 4) Info piutang (AR) dari transaksi kredit ----
+    price = float(c.price_per_portion)
+
+    credit_sales_total = 0.0
+    credit_paid_total = 0.0
+
+    for e in entry_qs:
+        if e.payment_type == "CREDIT":
+            credit_sales_total += float(e.portions or 0) * price
+            credit_paid_total += float(e.paid_amount or 0)
+
+    ar_outstanding = max(0.0, credit_sales_total - credit_paid_total)
+
+    # ---- 5) List transaksi manual untuk tabel ----
+    rows = tx_qs.order_by("-date", "-id")
+
+    ctx = {
+        "contract": c,
+        "rows": rows,
+
+        # kartu ringkasan
+        "total_in": total_in,
+        "total_out": total_out,
+        "net": net,
+
+        # breakdown biar jelas di UI
+        "sales_cash_in": sales_cash_in,
+        "manual_in": manual_in,
+        "manual_out": manual_out,
+
+        # piutang
+        "credit_sales_total": credit_sales_total,
+        "credit_paid_total": credit_paid_total,
+        "ar_outstanding": ar_outstanding,
+    }
+    return render(request, "core/cash_list.html", ctx)
 
 @require_auth
 @require_http_methods(["GET", "POST"])
@@ -390,25 +434,14 @@ def cash_create(request):
     if not c:
         return redirect("contract_setup")
 
-    if request.method == "POST":
-        form = CashTransactionForm(request.POST)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            obj.contract = c  # WAJIB: supaya muncul di list
-            obj.save()
-            return redirect("cash_list")
-    else:
-        form = CashTransactionForm()
+    form = CashTransactionForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        obj = form.save(commit=False)
+        obj.contract = c
+        obj.save()
+        return redirect("cash_list")
 
-    return render(
-        request,
-        "core/cash_form.html",
-        {
-            "form": form,
-            "is_edit": False,
-            "contract": c,
-        },
-    )
+    return render(request, "core/cash_form.html", {"form": form, "is_edit": False, "contract": c})
 
 
 @require_auth
@@ -419,27 +452,15 @@ def cash_edit(request, pk):
         return redirect("contract_setup")
 
     obj = get_object_or_404(CashTransaction, pk=pk, contract=c)
+    form = CashTransactionForm(request.POST or None, instance=obj)
 
-    if request.method == "POST":
-        form = CashTransactionForm(request.POST, instance=obj)
-        if form.is_valid():
-            updated = form.save(commit=False)
-            updated.contract = c
-            updated.save()
-            return redirect("cash_list")
-    else:
-        form = CashTransactionForm(instance=obj)
+    if request.method == "POST" and form.is_valid():
+        updated = form.save(commit=False)
+        updated.contract = c
+        updated.save()
+        return redirect("cash_list")
 
-    return render(
-        request,
-        "core/cash_form.html",
-        {
-            "form": form,
-            "is_edit": True,
-            "contract": c,
-            "obj": obj,
-        },
-    )
+    return render(request, "core/cash_form.html", {"form": form, "is_edit": True, "contract": c})
 
 
 @require_auth
